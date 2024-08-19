@@ -1,0 +1,52 @@
+---
+connections:
+  Host1:
+    hostname: superserver01
+    ip_address:
+    connection_type:
+      - ssh
+      - vnc
+    connection_group: connectiongroup1
+    sftp_enable: true
+    readonly: false
+
+  Host2:
+    hostname: superserver02
+    ip_address:
+    connection_type:
+      - ssh
+      - vnc
+    connection_group: connectiongroup1
+    sftp_enable: true
+    readonly: false
+
+users:
+  user1:
+    user_group: Administrators
+    passwd: q1w2e3r4
+
+  user2:
+    user_group: Administrators
+    passwd: q1w2e3r4
+
+usergroups:
+  Administrators:
+    grants:
+      - administer
+      - create_user
+      - create_user_group
+      - create_connection
+      - create_connection_group
+      - create_sharing_profile
+  Avengers:
+    grants:
+      - create_user
+      - create_user_group
+      - create_connection
+      - create_connection_group
+      - create_sharing_profile
+
+connectiongroups:
+  connectiongroup1:
+    usergroups:
+      - Administrators
