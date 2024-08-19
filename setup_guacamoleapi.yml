@@ -1,0 +1,122 @@
+---
+- name: Configure guacamole
+  hosts: podman-lab
+  gather_facts: no
+  vars_files:
+    - inventory/development/group_vars/guac-entries.yml
+  tasks:
+    - name: Check if server is running
+      ansible.builtin.uri:
+        url: "{{ guacamole_uri }}"
+      register: server_running
+      retries: 5
+      delay: 5
+
+    - name: Get guacadmin token to init deploy config
+      ansible.builtin.uri:
+        url: "{{ guacamole_uri }}/api/tokens"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          username: guacadmin
+          password: guacadmin
+      register: login_token
+      when: server_running.status == 200
+
+    - name: Create userGroups
+      ansible.builtin.uri:
+        url: "{{ guacamole_uri }}/api/session/data/postgresql/userGroups?token={{ login_token.json.authToken }}"
+        method: POST
+        body_format: json
+        headers:
+          Content-Type: application/json
+        body: |
+          {
+            "identifier": "{{ item.key }}",
+            "attributes": {
+            "disabled": ""
+            }
+          }
+        status_code: [200]
+        return_content: false
+      loop: "{{ usergroups | dict2items  }}"
+      when:
+        - item.key is defined
+      register: result_task
+      failed_when: '"already exists" not in result_task.json.message'
+
+    - name: Set grants to userGroups
+      ansible.builtin.uri:
+        url: "{{ guacamole_uri }}/api/session/data/postgresql/userGroups/{{ item.0.key }}/permissions?token={{ login_token.json.authToken }}"
+        method: PATCH
+        body_format: json
+        headers:
+          Content-Type: application/json
+        body: |
+          [
+            {
+              "op":"add",
+              "path":"/systemPermissions",
+              "value":"{{ item.1 | upper }}"
+             }
+          ]
+        status_code: [200, 204]
+      loop: "{{ usergroups | dict2items | subelements('value.grants') }}"
+      loop_control:
+        label: "{{ item.0 }} - {{ item.1 }}"
+
+    - name: Debug item content
+      debug:
+        var: item.value['user_group']
+      loop: "{{ users | dict2items }}"
+
+    - name: Create users
+      ansible.builtin.uri:
+        url: "{{ guacamole_uri }}/api/session/data/postgresql/users?token={{ login_token.json.authToken }}"
+        method: POST
+        body_format: json
+        headers:
+          Content-Type: application/json
+        body: |
+          {
+            "username": "{{ item.key }}",
+            "password": "{{ item.value['passwd'] }}",
+            "attributes": {
+              "disabled": "",
+              "expired": "",
+              "access-window-start": "",
+              "access-window-end": "",
+              "valid-from": "",
+              "valid-until": "",
+              "timezone": "Etc/GMT+0",
+              "guac-full-name": "",
+              "guac-organization": "",
+              "guac-organizational-role": ""
+            }
+          }
+        return_content: false
+      loop: "{{ users | dict2items }}"
+      when:
+        - item.key is defined
+      register: result_task
+      failed_when: '"already exists" not in result_task.json.message'
+
+    - name: Add users to their userGroups
+      ansible.builtin.uri:
+        url: "{{ guacamole_uri }}/api/session/data/postgresql/users/{{ item.key }}/userGroups?token={{ login_token.json.authToken }}"
+        method: PATCH
+        body_format: json
+        headers:
+          Content-Type: application/json
+        body: |
+          [
+            {
+              "op": "add",
+              "path": "/",
+              "value": "{{ item.value['user_group'] }}"
+            }
+          ]
+        status_code: [200, 204]
+      loop: "{{ users | dict2items }}"
+      when:
+        - item.key is defined
