@@ -6,6 +6,10 @@
   retries: 5
   delay: 5
 
+- name: Debug content
+  ansible.builtin.debug:
+    msg: "{{ server_running }}"
+
 - name: Get guacadmin token to init deploy config
   ansible.builtin.uri:
     url: "{{ guacamole_uri }}/api/tokens"
