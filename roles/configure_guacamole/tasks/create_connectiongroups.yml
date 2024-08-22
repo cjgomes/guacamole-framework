@@ -1,0 +1,72 @@
+---
+- name: Create connectionGroups
+  ansible.builtin.uri:
+    url: "{{ guacamole_uri }}/api/session/data/postgresql/connectionGroups?token={{ login_token.json.authToken }}"
+    method: POST
+    body_format: json
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+         "parentIdentifier": "ROOT",
+         "name": "{{ item.key }}",
+         "type": "ORGANIZATIONAL",
+         "attributes": {
+           "max-connections": "",
+           "max-connections-per-user": "",
+           "enable-session-affinity": ""
+         }
+      }
+    status_code: [200]
+    return_content: false
+  loop: "{{ connectiongroups | dict2items }}"
+  when:
+    - item.key is defined
+  register: result_task
+  failed_when:
+    - result_task.json.message is defined
+    - '"already exists" not in result_task.json.message'
+
+- name: Get connectionGroups tree
+  ansible.builtin.uri:
+    url: "{{ guacamole_uri }}/api/session/data/postgresql/connectionGroups/ROOT/tree?token={{ login_token.json.authToken }}"
+    method: GET
+    body_format: json
+    headers:
+      Content-Type: application/json
+    return_content: true
+  register:
+    connectiongroups_tree
+
+    #    - name: Debug Get content
+    #      debug:
+    #        msg: "{{ (connectiongroups_tree.json.childConnectionGroups | json_query('[?name==`connectiongroup1`].identifier')) | first }}"
+    #
+- name: Filter connectionGroup child identifier
+  ansible.builtin.set_fact:
+    filtered_identifier: "{{ connectiongroups_tree.json.childConnectionGroups | selectattr('name', 'equalto', item.key) | map(attribute='identifier') | first }}"
+  loop: "{{ connectiongroups | dict2items }}"
+
+- name: Debug Get content
+  ansible.builtin.debug:
+    msg: "{{ filtered_identifier }}"
+
+- name: Set userGroup access to connectionGroups
+  ansible.builtin.uri:
+    url: "{{ guacamole_uri }}/api/session/data/postgresql/userGroups/{{ item.1 }}/permissions?token={{ login_token.json.authToken }}"
+    method: PATCH
+    body_format: json
+    headers:
+      Content-Type: application/json
+    body: |
+      [
+        {
+          "op": "add",
+          "path": "/connectionGroupPermissions/{{ filtered_identifier }}",
+          "value": "READ"
+        }
+      ]
+    status_code: [200, 204]
+  loop: "{{ connectiongroups | dict2items | subelements('value.usergroups') }}"
+  loop_control:
+    label: "{{ item.0 }} - {{ item.1 }}"

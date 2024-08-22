@@ -1,0 +1,40 @@
+---
+- name: Filter connectionGroup child identifier
+  ansible.builtin.set_fact:
+    filtered_identifier: "{{ connectiongroups_tree.json.childConnectionGroups | selectattr('name', 'equalto', item.value['connection_group']) | map(attribute='identifier') | first }}"
+  loop: "{{ connections | dict2items }}"
+
+- name: Debug Get content
+  ansible.builtin.debug:
+    msg: "{{ filtered_identifier }}"
+
+- name: Get ssh template
+  ansible.builtin.template:
+    src: templates/sshtemplate.json.j2
+    dest: /tmp/sshtemplate.json
+    mode: "{{ (item | d(omit)) if item is defined else omit }}"
+  register: ssh_data
+
+- name: Debug Get content
+  ansible.builtin.debug:
+    msg: "{{ ssh_data }}"
+
+#- name: Set userGroup access to connectionGroups
+#  ansible.builtin.uri:
+#    url: "{{ guacamole_uri }}/api/session/data/postgresql/connections?token={{ login_token.json.authToken }}"
+#    method: POST
+#    body_format: json
+#    headers:
+#      Content-Type: application/json
+#    body: |
+#      [
+#        {
+#          "op": "add",
+#          "path": "/connectionGroupPermissions/{{ filtered_identifier }}",
+#          "value": "READ"
+#        }
+#      ]
+#    status_code: [200, 204]
+#  loop: "{{ connectiongroups | dict2items | subelements('value.usergroups') }}"
+#  loop_control:
+#    label: "{{ item.0 }} - {{ item.1 }}"

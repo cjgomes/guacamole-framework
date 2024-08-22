@@ -1,0 +1,15 @@
+---
+- name: Get token to configuration
+  ansible.builtin.import_tasks: get_token.yml
+
+- name: Create Guacamole userGroups
+  ansible.builtin.import_tasks: create_usergroups.yml
+
+- name: Create Guacamole users
+  ansible.builtin.import_tasks: create_users.yml
+
+- name: Create Guacamole connectionGroups
+  ansible.builtin.import_tasks: create_connectiongroups.yml
+
+- name: Create Guacamole connections
+  ansible.builtin.import_tasks: create_connections.yml

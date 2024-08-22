@@ -1,0 +1,44 @@
+---
+- name: Create userGroups
+  ansible.builtin.uri:
+    url: "{{ guacamole_uri }}/api/session/data/postgresql/userGroups?token={{ login_token.json.authToken }}"
+    method: POST
+    body_format: json
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "identifier": "{{ item.key }}",
+        "attributes": {
+        "disabled": ""
+        }
+      }
+    status_code: [200]
+    return_content: false
+  loop: "{{ usergroups | dict2items }}"
+  when:
+    - item.key is defined
+  register: result_task
+  failed_when:
+    - result_task.json.message is defined
+    - '"already exists" not in result_task.json.message'
+
+- name: Set grants to userGroups
+  ansible.builtin.uri:
+    url: "{{ guacamole_uri }}/api/session/data/postgresql/userGroups/{{ item.0.key }}/permissions?token={{ login_token.json.authToken }}"
+    method: PATCH
+    body_format: json
+    headers:
+      Content-Type: application/json
+    body: |
+      [
+        {
+          "op":"add",
+          "path":"/systemPermissions",
+          "value":"{{ item.1 | upper }}"
+         }
+      ]
+    status_code: [200, 204]
+  loop: "{{ usergroups | dict2items | subelements('value.grants') }}"
+  loop_control:
+    label: "{{ item.0 }} - {{ item.1 }}"
