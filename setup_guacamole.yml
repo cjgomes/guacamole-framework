@@ -1,0 +1,7 @@
+---
+- name: Deploy Apache Guacamole configuration
+  hosts: podman-lab
+  vars_files:
+    - inventory/development/group_vars/guac-entries.yml
+  roles:
+    - configure_guacamole
