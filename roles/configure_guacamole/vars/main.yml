@@ -1,8 +1,7 @@
 ---
 connections:
-  Host1:
-    hostname: superserver01
-    ip_address:
+  superserver01:
+    ip_address: 192.168.0.1
     connection_type:
       - ssh
       - vnc
@@ -10,9 +9,8 @@ connections:
     sftp_enable: true
     readonly: false
 
-  Host2:
-    hostname: superserver02
-    ip_address:
+  superserver02:
+    ip_address: 192.168.0.2
     connection_type:
       - ssh
       - vnc

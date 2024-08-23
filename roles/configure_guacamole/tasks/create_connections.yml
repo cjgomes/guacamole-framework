@@ -8,33 +8,23 @@
   ansible.builtin.debug:
     msg: "{{ filtered_identifier }}"
 
-- name: Get ssh template
-  ansible.builtin.template:
-    src: templates/sshtemplate.json.j2
-    dest: /tmp/sshtemplate.json
-    mode: "{{ (item | d(omit)) if item is defined else omit }}"
-  register: ssh_data
+#- name: Get ssh template
+#  ansible.builtin.template:
+#    src: templates/sshtemplate.json.j2
+#    dest: null
+#  register: ssh_data_content
+#
+#- name: Debug Get content
+#  ansible.builtin.debug:
+#    msg: "{{ ssh_data }}"
 
-- name: Debug Get content
-  ansible.builtin.debug:
-    msg: "{{ ssh_data }}"
-
-#- name: Set userGroup access to connectionGroups
-#  ansible.builtin.uri:
-#    url: "{{ guacamole_uri }}/api/session/data/postgresql/connections?token={{ login_token.json.authToken }}"
-#    method: POST
-#    body_format: json
-#    headers:
-#      Content-Type: application/json
-#    body: |
-#      [
-#        {
-#          "op": "add",
-#          "path": "/connectionGroupPermissions/{{ filtered_identifier }}",
-#          "value": "READ"
-#        }
-#      ]
-#    status_code: [200, 204]
-#  loop: "{{ connectiongroups | dict2items | subelements('value.usergroups') }}"
-#  loop_control:
-#    label: "{{ item.0 }} - {{ item.1 }}"
+- name: Send ssh connection to server
+  ansible.builtin.uri:
+    url: "{{ guacamole_uri }}/api/session/data/postgresql/connections?token={{ login_token.json.authToken }}"
+    method: POST
+    body_format: json
+    headers:
+      Content-Type: application/json
+    body: "{{ lookup('template', 'templates/sshtemplate.json.j2') }}"
+    status_code: [200, 204]
+  loop: "{{ connections | dict2items }}"
