@@ -30,13 +30,20 @@ connections:
     sftp_enable: true
     readonly: false
 
+  - name: superserver04_ssh
+    ip_address: 192.168.0.5
+    connection_type: ssh
+    connection_group: webdesigners
+    sftp_enable: true
+    readonly: false
+
 users:
   user1:
     user_group: Administrators
     passwd: q1w2e3r4
 
   user2:
-    user_group: Administrators
+    user_group: Avengers
     passwd: q1w2e3r4
 
 usergroups:
@@ -55,16 +62,24 @@ usergroups:
       - create_connection
       - create_connection_group
       - create_sharing_profile
+  Asgardians:
+    grants:
+      - create_connection
+      - create_connection_group
+      - create_sharing_profile
 
 connectiongroups:
   connectiongroup1:
     usergroups:
-      - Administrators
       - Avengers
 
   connectiongroup2:
     usergroups:
       - Administrators
 
+  webdesigners:
+    usergroups:
+      - Asgardians
+
 sharedconnections:
-  enabled: true
+  enabled: false
