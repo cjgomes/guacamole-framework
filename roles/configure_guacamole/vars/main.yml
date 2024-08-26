@@ -1,20 +1,32 @@
 ---
 connections:
-  superserver01:
+  - name: superserver01_ssh
     ip_address: 192.168.0.1
-    connection_type:
-      - ssh
-      - vnc
+    connection_type: ssh
+    connection_group: connectiongroup1
+    sftp_enable: true
+    readonly: false
+    shared_connection_name:
+    shared_connection_readonly: true
+
+  - name: superserver01_vnc
+    ip_address: 192.168.0.1
+    connection_type: vnc
     connection_group: connectiongroup1
     sftp_enable: true
     readonly: false
 
-  superserver02:
+  - name: superserver02_ssh
     ip_address: 192.168.0.2
-    connection_type:
-      - ssh
-      - vnc
+    connection_type: ssh
     connection_group: connectiongroup1
+    sftp_enable: true
+    readonly: false
+
+  - name: superserver02_vnc
+    ip_address: 192.168.0.2
+    connection_type: vnc
+    connection_group: connectiongroup2
     sftp_enable: true
     readonly: false
 
@@ -49,3 +61,10 @@ connectiongroups:
     usergroups:
       - Administrators
       - Avengers
+
+  connectiongroup2:
+    usergroups:
+      - Administrators
+
+sharedconnections:
+  enabled: true

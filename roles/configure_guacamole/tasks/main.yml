@@ -13,3 +13,7 @@
 
 - name: Create Guacamole connections
   ansible.builtin.import_tasks: create_connections.yml
+
+- name: Create shared connections
+  ansible.builtin.import_tasks: create_sharedconnections.yml
+  when: sharedconnections.enabled

@@ -1,0 +1,44 @@
+---
+- name: Get connectionGroups tree
+  ansible.builtin.uri:
+    url: "{{ guacamole_uri }}/api/session/data/postgresql/connectionGroups/ROOT/tree?token={{ login_token.json.authToken }}"
+    method: GET
+    body_format: json
+    headers:
+      Content-Type: application/json
+  register:
+    connectiongroups_tree
+
+
+- name: Debug content
+  ansible.builtin.debug:
+#    msg: "{{ connectiongroups_tree.json.childConnectionGroups[].childConnections | selectattr('name', 'equalto', 'superserver02_vnc') | map(attribute='identifier') }}"
+    #    msg: "{{ connectiongroups_tree.json.childConnectionGroups | map(attribute='childConnections') | flatten | selectattr('name', 'equalto', 'superserver02_vnc') | map(attribute='identifier') | first }}"
+    msg: >-
+      {{ connectiongroups_tree.json.childConnectionGroups
+      | map(attribute='childConnections') | flatten
+      | selectattr('name', 'equalto', 'superserver02_vnc')
+      | map(attribute='identifier') | first }}
+
+
+- name: Create shared connections
+  vars:
+    filtered_connection: "{{ connectiongroups_tree.json.childConnectionGroups | map(attribute='childConnections') | flatten | selectattr('name', 'equalto', item.name) | map(attribute='identifier') | first }}"
+  ansible.builtin.uri:
+    url: "{{ guacamole_uri }}/api/session/data/postgresql/sharingProfiles?token={{ login_token.json.authToken }}"
+    method: POST
+    body_format: json
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "primaryConnectionIdentifier": "{{ filtered_connection }}",
+      "name": "{{ (item.shared_connection_name is not defined and (item.shared_connection_readonly)) | ternary('Control', 'Visualize') }}",
+        "parameters": {
+          "read-only": "{{ item.shared_connection_readonly }}"
+        },
+        "attributes": {}
+      }
+  loop: "{{ connections }}"
+  loop_control:
+    loop_var: item
