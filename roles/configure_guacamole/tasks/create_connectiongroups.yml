@@ -18,7 +18,6 @@
          }
       }
     status_code: [200]
-    return_content: false
   loop: "{{ connectiongroups | dict2items }}"
   when:
     - item.key is defined
@@ -34,14 +33,9 @@
     body_format: json
     headers:
       Content-Type: application/json
-    return_content: true
   register:
     connectiongroups_tree
 
-    #    - name: Debug Get content
-    #      debug:
-    #        msg: "{{ (connectiongroups_tree.json.childConnectionGroups | json_query('[?name==`connectiongroup1`].identifier')) | first }}"
-    #
 - name: Filter connectionGroup child identifier
   ansible.builtin.set_fact:
     filtered_identifier: "{{ connectiongroups_tree.json.childConnectionGroups | selectattr('name', 'equalto', item.key) | map(attribute='identifier') | first }}"

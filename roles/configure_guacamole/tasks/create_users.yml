@@ -23,7 +23,6 @@
           "guac-organizational-role": ""
         }
       }
-    return_content: false
   loop: "{{ users | dict2items }}"
   when:
     - item.key is defined
