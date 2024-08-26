@@ -1,30 +1,18 @@
 ---
-- name: Filter connectionGroup child identifier
-  ansible.builtin.set_fact:
-    filtered_identifier: "{{ connectiongroups_tree.json.childConnectionGroups | selectattr('name', 'equalto', item.value['connection_group']) | map(attribute='identifier') | first }}"
-  loop: "{{ connections | dict2items }}"
-
-- name: Debug Get content
-  ansible.builtin.debug:
-    msg: "{{ filtered_identifier }}"
-
-#- name: Get ssh template
-#  ansible.builtin.template:
-#    src: templates/sshtemplate.json.j2
-#    dest: null
-#  register: ssh_data_content
-#
-#- name: Debug Get content
-#  ansible.builtin.debug:
-#    msg: "{{ ssh_data }}"
-
-- name: Send ssh connection to server
+- name: Create connections in Guacamole
+  vars:
+    filtered_parent: "{{ connectiongroups_tree.json.childConnectionGroups | selectattr('name', 'equalto', item.connection_group) | map(attribute='identifier') | first }}"
   ansible.builtin.uri:
     url: "{{ guacamole_uri }}/api/session/data/postgresql/connections?token={{ login_token.json.authToken }}"
     method: POST
     body_format: json
     headers:
-      Content-Type: application/json
-    body: "{{ lookup('template', 'templates/sshtemplate.json.j2') }}"
-    status_code: [200, 204]
-  loop: "{{ connections | dict2items }}"
+      Content-Type: "application/json"
+    body: "{{ lookup('template', 'templates/' + item.connection_type + 'template.json.j2') }}"
+  loop: "{{ connections }}"
+  loop_control:
+    loop_var: item
+  register: result_task
+  failed_when:
+    - result_task.json.message is defined
+    - '"already exists" not in result_task.json.message'
