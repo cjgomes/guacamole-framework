@@ -36,16 +36,14 @@
   register:
     connectiongroups_tree
 
-- name: Filter connectionGroup child identifier
-  ansible.builtin.set_fact:
-    filtered_identifier: "{{ connectiongroups_tree.json.childConnectionGroups | selectattr('name', 'equalto', item.key) | map(attribute='identifier') | first }}"
-  loop: "{{ connectiongroups | dict2items }}"
-
-- name: Debug Get content
-  ansible.builtin.debug:
-    msg: "{{ filtered_identifier }}"
+#- name: Filter connectionGroup child identifier
+#  ansible.builtin.set_fact:
+#    filtered_identifier: "{{ connectiongroups_tree.json.childConnectionGroups | selectattr('name', 'equalto', item.key) | map(attribute='identifier') | first }}"
+#  loop: "{{ connectiongroups | dict2items }}"
 
 - name: Set userGroup access to connectionGroups
+  vars:
+    filtered_identifier: "{{ connectiongroups_tree.json.childConnectionGroups | selectattr('name', 'equalto', item.0.key) | map(attribute='identifier') | first }}"
   ansible.builtin.uri:
     url: "{{ guacamole_uri }}/api/session/data/postgresql/userGroups/{{ item.1 }}/permissions?token={{ login_token.json.authToken }}"
     method: PATCH
