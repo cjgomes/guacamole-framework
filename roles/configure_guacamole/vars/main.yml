@@ -15,6 +15,8 @@ connections:
     connection_group: connectiongroup1
     sftp_enable: true
     readonly: false
+    shared_connection_name: Teste
+    shared_connection_readonly: false
 
   - name: superserver02_ssh
     ip_address: 192.168.0.2
@@ -82,4 +84,4 @@ connectiongroups:
       - Asgardians
 
 sharedconnections:
-  enabled: false
+  enabled: true

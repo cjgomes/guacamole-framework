@@ -12,8 +12,6 @@
 
 - name: Debug content
   ansible.builtin.debug:
-#    msg: "{{ connectiongroups_tree.json.childConnectionGroups[].childConnections | selectattr('name', 'equalto', 'superserver02_vnc') | map(attribute='identifier') }}"
-    #    msg: "{{ connectiongroups_tree.json.childConnectionGroups | map(attribute='childConnections') | flatten | selectattr('name', 'equalto', 'superserver02_vnc') | map(attribute='identifier') | first }}"
     msg: >-
       {{ connectiongroups_tree.json.childConnectionGroups
       | map(attribute='childConnections') | flatten
@@ -24,6 +22,15 @@
 - name: Create shared connections
   vars:
     filtered_connection: "{{ connectiongroups_tree.json.childConnectionGroups | map(attribute='childConnections') | flatten | selectattr('name', 'equalto', item.name) | map(attribute='identifier') | first }}"
+    shared_name: >-
+      {{
+        (
+          item.shared_connection_name is defined and item.shared_connection_name
+          or (item.shared_connection_readonly is defined and item.shared_connection_readonly
+          and 'Visualize'
+          or 'Control')
+        )
+      }}
   ansible.builtin.uri:
     url: "{{ guacamole_uri }}/api/session/data/postgresql/sharingProfiles?token={{ login_token.json.authToken }}"
     method: POST
@@ -33,9 +40,9 @@
     body: |
       {
         "primaryConnectionIdentifier": "{{ filtered_connection }}",
-      "name": "{{ (item.shared_connection_name is not defined and (item.shared_connection_readonly)) | ternary('Control', 'Visualize') }}",
+        "name": "{{ shared_name }}",
         "parameters": {
-          "read-only": "{{ item.shared_connection_readonly }}"
+          "read-only": "{{ item.shared_connection_readonly | default('false') | lower }}"
         },
         "attributes": {}
       }
