@@ -9,19 +9,16 @@
   register:
     connectiongroups_tree
 
-
-- name: Debug content
-  ansible.builtin.debug:
-    msg: >-
-      {{ connectiongroups_tree.json.childConnectionGroups
-      | map(attribute='childConnections') | flatten
-      | selectattr('name', 'equalto', 'superserver02_vnc')
-      | map(attribute='identifier') | first }}
-
-
 - name: Create shared connections
   vars:
-    filtered_connection: "{{ connectiongroups_tree.json.childConnectionGroups | map(attribute='childConnections') | flatten | selectattr('name', 'equalto', item.name) | map(attribute='identifier') | first }}"
+    filtered_connection: >-
+      {{ connectiongroups_tree.json.childConnectionGroups
+      | map(attribute='childConnections')
+      | flatten
+      | selectattr('name', 'equalto', item.name)
+      | map(attribute='identifier')
+      | first
+      }}
     shared_name: >-
       {{
         (
@@ -49,3 +46,7 @@
   loop: "{{ connections }}"
   loop_control:
     loop_var: item
+  register: result_task
+  failed_when:
+    - result_task.json.message is defined
+    - '"already exists" not in result_task.json.message'

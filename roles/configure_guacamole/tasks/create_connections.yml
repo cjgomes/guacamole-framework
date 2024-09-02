@@ -1,7 +1,12 @@
 ---
 - name: Create connections in Guacamole
   vars:
-    filtered_parent: "{{ connectiongroups_tree.json.childConnectionGroups | selectattr('name', 'equalto', item.connection_group) | map(attribute='identifier') | first }}"
+    filtered_parent: >-
+      {{ connectiongroups_tree.json.childConnectionGroups
+      | selectattr('name', 'equalto', item.connection_group)
+      | map(attribute='identifier')
+      | first
+      }}
   ansible.builtin.uri:
     url: "{{ guacamole_uri }}/api/session/data/postgresql/connections?token={{ login_token.json.authToken }}"
     method: POST
@@ -27,23 +32,16 @@
   register:
     connectiongroups_tree
 
-#- name: Debug Content
-#  ansible.builtin.debug:
-#    #msg: "{{ connectiongroups_tree.json.childConnectionGroups | selectattr('name', 'equalto', 'superserver02-ssh') | map(attribute='identifier') }}"
-#    msg: >-
-#      {{ connectiongroups_tree.json.childConnectionGroups
-#      | map(attribute='childConnections') | flatten
-#      | selectattr('name', 'equalto', 'superserver02_vnc')
-#      | map(attribute='identifier') | first }}
-
 - name: Setting permissions to connections
   vars:
-#    filtered_connection_id: "{{ connectiongroups_tree.json.childConnectionGroups | selectattr('name', 'equalto', item.connection_group) | map(attribute='identifier') | first }}"
     filtered_connection_id: >-
       {{ connectiongroups_tree.json.childConnectionGroups
-      | map(attribute='childConnections') | flatten
+      | map(attribute='childConnections')
+      | flatten
       | selectattr('name', 'equalto', item.name)
-      | map(attribute='identifier') | first }}
+      | map(attribute='identifier')
+      | first
+      }}
     filtered_connectiongroup: "{{ item.connection_group }}"
     filtered_usergroup: "{{ vars['connectiongroups'][filtered_connectiongroup]['usergroups'] }}"
   ansible.builtin.uri:
