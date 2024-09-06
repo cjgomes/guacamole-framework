@@ -69,17 +69,23 @@ usergroups:
       - create_connection
       - create_connection_group
       - create_sharing_profile
+  X-Men:
+    grants:
+      - create_connection
+      - create_connection_group
+      - create_sharing_profile
 
 connectiongroups:
-  connectiongroup1:
+  - name: connectiongroup1
     usergroups:
       - Avengers
+      - X-Men
 
-  connectiongroup2:
+  - name: connectiongroup2
     usergroups:
       - Administrators
 
-  webdesigners:
+  - name: webdesigners
     usergroups:
       - Asgardians
 
