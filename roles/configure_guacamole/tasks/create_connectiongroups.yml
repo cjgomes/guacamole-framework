@@ -9,7 +9,7 @@
     body: |
       {
          "parentIdentifier": "ROOT",
-         "name": "{{ item.key }}",
+         "name": "{{ item.name }}",
          "type": "ORGANIZATIONAL",
          "attributes": {
            "max-connections": "",
@@ -18,9 +18,11 @@
          }
       }
     status_code: [200]
-  loop: "{{ connectiongroups | dict2items }}"
+  loop: "{{ connectiongroups }}"
+  loop_control:
+    loop_var: item
   when:
-    - item.key is defined
+    - item is defined
   register: result_task
   failed_when:
     - result_task.json.message is defined
@@ -40,7 +42,7 @@
   vars:
     filtered_identifier: >-
       {{ connectiongroups_tree.json.childConnectionGroups
-      | selectattr('name', 'equalto', item.0.key)
+      | selectattr('name', 'equalto', item.0.name)
       | map(attribute='identifier')
       | first
       }}
@@ -59,6 +61,6 @@
         }
       ]
     status_code: [200, 204]
-  loop: "{{ connectiongroups | dict2items | subelements('value.usergroups') }}"
+  loop: "{{ connectiongroups | subelements('usergroups') }}"
   loop_control:
-    label: "{{ item.0 }} - {{ item.1 }}"
+    loop_var: item
