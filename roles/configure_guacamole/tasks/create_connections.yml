@@ -1,4 +1,14 @@
 ---
+- name: Get connectionGroups tree
+  ansible.builtin.uri:
+    url: "{{ guacamole_uri }}/api/session/data/postgresql/connectionGroups/ROOT/tree?token={{ login_token.json.authToken }}"
+    method: GET
+    body_format: json
+    headers:
+      Content-Type: application/json
+  register:
+    connectiongroups_tree
+
 - name: Create connections in Guacamole
   vars:
     filtered_parent: >-
@@ -22,7 +32,7 @@
     - result_task.json.message is defined
     - '"already exists" not in result_task.json.message'
 
-- name: Get connectionGroups tree
+- name: Get connectionGroups updated tree
   ansible.builtin.uri:
     url: "{{ guacamole_uri }}/api/session/data/postgresql/connectionGroups/ROOT/tree?token={{ login_token.json.authToken }}"
     method: GET
@@ -30,12 +40,12 @@
     headers:
       Content-Type: application/json
   register:
-    connectiongroups_tree
+    connectiongroups_updatedtree
 
-- name: Setting permissions to connections
+- name: Colect data to set permitions
   vars:
     filtered_connection_id: >-
-      {{ connectiongroups_tree.json.childConnectionGroups
+      {{ connectiongroups_updatedtree.json.childConnectionGroups
       | map(attribute='childConnections')
       | flatten
       | selectattr('name', 'equalto', item.name)
@@ -43,22 +53,14 @@
       | first
       }}
     filtered_connectiongroup: "{{ item.connection_group }}"
-    filtered_usergroup: "{{ vars['connectiongroups'][filtered_connectiongroup]['usergroups'] }}"
-  ansible.builtin.uri:
-    url: "{{ guacamole_uri }}/api/session/data/postgresql/userGroups/{{ filtered_usergroup | join(', ') }}/permissions?token={{ login_token.json.authToken }}"
-    method: PATCH
-    body_format: json
-    headers:
-      Content-Type: "application/json"
-    body: |
-      [
-        {
-          "op": "add",
-          "path": "/connectionPermissions/{{ filtered_connection_id }}",
-          "value": "READ"
-        }
-      ]
-    status_code: [200, 204]
+    filtered_usergroup: >-
+      {{
+        connectiongroups
+        | selectattr('name', 'equalto', filtered_connectiongroup)
+        | map(attribute='usergroups')
+        | first
+      }}
+  ansible.builtin.include_tasks: set_connection_permition.yml
   loop: "{{ connections }}"
   loop_control:
     loop_var: item

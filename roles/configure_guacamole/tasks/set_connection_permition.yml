@@ -1,0 +1,25 @@
+# set_connection_permition.yml
+- name: Set connection permitions
+  ansible.builtin.uri:
+    url: "{{ guacamole_uri }}/api/session/data/postgresql/userGroups/{{ group }}/permissions?token={{ login_token.json.authToken }}"
+    method: PATCH
+    body_format: json
+    headers:
+      Content-Type: "application/json"
+    body: |
+      [
+        {
+          "op": "add",
+          "path": "/connectionPermissions/{{ filtered_connection_id }}",
+          "value": "READ"
+        }
+      ]
+    status_code: [200, 204]
+  loop: >-
+    {{
+      filtered_usergroup
+      if filtered_usergroup is iterable and filtered_usergroup is not string
+      else [filtered_usergroup]
+    }}
+  loop_control:
+    loop_var: group
