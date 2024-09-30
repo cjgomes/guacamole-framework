@@ -15,7 +15,7 @@
     "recording-exclude-output": "",
     "recording-exclude-mouse": "",
     "recording-include-keys": "",
-    "create-recording-path": "",
+    "create-recording-path": "true",
     "enable-sftp": "{{ item.sftp_enable | default(false) | lower  }}",
     "sftp-port": "{{ item.ssh_port | default('22') }}",
     "sftp-server-alive-interval": "",
@@ -39,8 +39,8 @@
     "locale": "",
     "typescript-path": "",
     "typescript-name": "",
-    "recording-path": "",
-    "recording-name": "",
+    "recording-path": "${HISTORY_PATH}",
+    "recording-name": "${HISTORY_UUID}",
     "sftp-root-directory": ""
   },
   "attributes": {
