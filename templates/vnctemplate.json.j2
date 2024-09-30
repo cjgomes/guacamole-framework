@@ -32,8 +32,8 @@
     "recording-name": "${HISTORY_UUID}",
     "recording-path": "${HISTORY_PATH}",
     "dest-host": "",
-    "password": "atechatech",
-    "username": "root",
+    "username": "{{ item.username | default('${GUAC_USERNAME}') }}",
+    "password": "{{ item.password | default('${GUAC_PASSWORD}') }}",
     "hostname": "{{ item.ip_address | default('127.0.0.1') }}"
   },
   "attributes": {
